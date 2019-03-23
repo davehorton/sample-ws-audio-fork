@@ -3,7 +3,7 @@ const fs = require('fs');
 const argv = require('minimist')(process.argv.slice(2));
 const recordingPath = argv._.length ? argv._[0] : '/tmp/audio.raw';
 const port = argv.port && parseInt(argv.port) ? parseInt(argv.port) : 3001
-let wstream;
+let wstream, reads = 0;
 
 console.log(`listening on port ${port}, writing incoming raw audio to file ${recordingPath}`);
 
@@ -23,12 +23,13 @@ wss.on('connection', (ws, req) => {
       console.log(`received message: ${message}`);
     }
     else if (message instanceof Buffer) {
+      reads++;
       wstream.write(message);
     }
   });
 
   ws.on('close', (code, reason) => {
-    console.log(`socket closed ${code}:${reason}`);
+    console.log(`socket closed with reason ${code}:${reason}; received ${reads} binary frames`);
     wstream.end();
   });
 });
